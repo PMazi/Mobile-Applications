@@ -17,3 +17,6 @@ val LightLightGray = Color(224, 224, 224)
 
 val Pink = Color(255, 70, 88)
 val Gray = Color(159, 159, 159)
+
+val DarkGray = Color(92, 92, 92)
+val LightGray = Color(174, 174, 174)

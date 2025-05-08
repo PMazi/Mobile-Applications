@@ -10,7 +10,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,7 +32,6 @@ import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +40,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,7 +54,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Popup
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -72,20 +68,27 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.State
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.automirrored.filled.Message
-import androidx.compose.material.icons.filled.Message
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.Divider
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
-
-
-import androidx.compose.ui.modifier.modifierLocalConsumer
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
 
-
-class Drink(val name: String, val rating: Int, val imageResId: Int, val ingredient: String, val description: String){}
+class Drink(val name: String, val rating: Int, val imageResId: Int,
+            val ingredient: String,
+            val description: String){}
 
 
 class MainActivity : ComponentActivity() {
@@ -170,39 +173,39 @@ class MainActivity : ComponentActivity() {
 
     val NoAlcoholDrinksInfo = listOf(
         Drink(
-            "Virgin Mojito", 5, R.drawable.mojito,
-            "1/2 limonki, 2 łyżeczki cukru, kilka listków mięty, woda gazowana, kruszony lód",
-            "Pokrój limonkę na ćwiartki i wrzuć do szklanki. Dodaj cukier i rozgnieć muddlerem. Dodaj listki mięty i delikatnie je ugnieć. Wsyp kruszony lód i dopełnij wodą gazowaną. Wymieszaj i udekoruj miętą."
+            "Blue Lagoon Virgin", 4, R.drawable.blue_lagoon_virgin,
+            "100 ml lemoniady, 20 ml syropu blue curacao bezalkoholowego, lód, plaster cytryny",
+            "Do szklanki z lodem wlej lemoniadę, a następnie dodaj syrop blue curacao. Wymieszaj i udekoruj plasterkiem cytryny."
         ),
         Drink(
-            "Shirley Temple", 4, TODO,
-            "100 ml lemoniady (Sprite/7up), 20 ml grenadyny, wisienka koktajlowa, lód",
-            "Do szklanki z lodem wlej lemoniadę, a następnie dodaj grenadynę. Udekoruj wisienką koktajlową."
-        ),
-        Drink(
-            "Virgin Piña Colada", 3, TODO,
-            "100 ml soku ananasowego, 50 ml mleka kokosowego, kruszony lód, plaster ananasa",
-            "Zmiksuj wszystkie składniki w blenderze na kremową konsystencję. Przelej do wysokiej szklanki i udekoruj plastrem ananasa."
-        ),
-        Drink(
-            "Nojito Truskawkowe", 4, TODO,
+            "Strawberry Mojito", 4, R.drawable.strawberry_mojito,
             "1/2 limonki, kilka listków mięty, 2 truskawki, 2 łyżeczki cukru, woda gazowana, kruszony lód",
             "Limonkę, truskawki i cukier rozgnieć w szklance. Dodaj miętę i lekko ugnieć. Wsyp lód, dopełnij wodą gazowaną i udekoruj miętą."
         ),
         Drink(
-            "Lemoniada Arbuzowa", 5, TODO,
+            "Virgin Piña Colada", 3, R.drawable.pina_colada,
+            "100 ml soku ananasowego, 50 ml mleka kokosowego, kruszony lód, plaster ananasa",
+            "Zmiksuj wszystkie składniki w blenderze na kremową konsystencję. Przelej do wysokiej szklanki i udekoruj plastrem ananasa."
+        ),
+        Drink(
+            "Strwaberry Lemonade", 5, R.drawable.watermelon_lemonade,
             "200 g arbuza, 100 ml wody, sok z 1/2 cytryny, 1 łyżeczka miodu, lód",
             "Zblenduj arbuza z wodą, cytryną i miodem. Przelej przez sitko, wlej do szklanki z lodem i udekoruj listkiem mięty."
         ),
         Drink(
-            "Smoothie Mango-Banan", 3, TODO,
+            "Smoothie Mango-Banan", 3, R.drawable.smootkie_mango_banan,
             "1 mango, 1 banan, 100 ml soku pomarańczowego, kilka kostek lodu",
             "Zblenduj wszystkie składniki do uzyskania gładkiej konsystencji. Podawaj w wysokiej szklance ze słomką."
         ),
         Drink(
-            "Blue Lagoon Virgin", 4, TODO,
-            "100 ml lemoniady, 20 ml syropu blue curacao bezalkoholowego, lód, plaster cytryny",
-            "Do szklanki z lodem wlej lemoniadę, a następnie dodaj syrop blue curacao. Wymieszaj i udekoruj plasterkiem cytryny."
+            "Shirley Temple", 4, R.drawable.shriley_temple,
+            "100 ml lemoniady (Sprite/7up), 20 ml grenadyny, wisienka koktajlowa, lód",
+            "Do szklanki z lodem wlej lemoniadę, a następnie dodaj grenadynę. Udekoruj wisienką koktajlową."
+        ),
+        Drink(
+            "Virgin Mojito", 5, R.drawable.mojito,
+            "1/2 limonki, 2 łyżeczki cukru, kilka listków mięty, woda gazowana, kruszony lód",
+            "Pokrój limonkę na ćwiartki i wrzuć do szklanki. Dodaj cukier i rozgnieć muddlerem. Dodaj listki mięty i delikatnie je ugnieć. Wsyp kruszony lód i dopełnij wodą gazowaną. Wymieszaj i udekoruj miętą."
         )
     )
 
@@ -259,12 +262,13 @@ fun Navig(navController: NavHostController,
             DrinksList(
                 onDrinksListClick = { drink -> navController.navigate(route = "showDrinkInfo/${drink.name}")},
                 AlcoholDrinksInfo,
-                NoAlcoholDrinksInfo
+                NoAlcoholDrinksInfo,
+                navController = navController
             )
         }
         composable(route = "showDrinkInfo/{drinkName}") { backStackEntry ->
             val drinkName = backStackEntry.arguments?.getString("drinkName")
-            val drink = AlcoholDrinksInfo.firstOrNull { it.name == drinkName }
+            val drink = (AlcoholDrinksInfo + NoAlcoholDrinksInfo).firstOrNull { it.name == drinkName }
             if (drink != null) {
                 onNavChange("showDrinkInfo")
                 showDrinkInfo(drink,
@@ -272,10 +276,13 @@ fun Navig(navController: NavHostController,
                 )
             }
         }
+        composable(route = "aboutApplication"){
+            aboutApplication(
+                navController = navController
+            )
+        }
     }
 }
-
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -283,89 +290,146 @@ fun Navig(navController: NavHostController,
 fun DrinksList(onDrinksListClick: (Drink) -> Unit = {},
                AlcoholDrinksInfo: List<Drink>,
                NoAlcoholDrinksInfo: List<Drink>,
-               modifier: Modifier = Modifier
+               modifier: Modifier = Modifier,
+               navController: NavController
 ) {
     var showAlcoholDrinks by rememberSaveable {mutableStateOf(true)}
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        Button(
-                            onClick = { showAlcoholDrinks = true },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent, // Brak tła
-                                contentColor = MaterialTheme.colorScheme.onBackground // Domyślny kolor czcionki
-                            )
-                        ) {
-                            if (showAlcoholDrinks) {
-                                textUnderline("Alkoholowe", underlineColor = LBlue, 16.sp, FontWeight.Medium)
-                            } else {
-                                Text(text = "Alkoholowe", fontSize = 16.sp)
-                            }
-                        }
-                        Button(
-                            onClick = { showAlcoholDrinks = false },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent, // Brak tła
-                                contentColor = MaterialTheme.colorScheme.onBackground // Domyślny kolor czcionki
-                            )
-                        ) {
-                            if (!showAlcoholDrinks) {
-                                textUnderline("Bezalkoholowe", underlineColor = LBlue, 16.sp, FontWeight.Medium)
-                            } else {
-                                Text(text = "Bezalkoholowe", fontSize = 16.sp)
-                            }
+
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Text("Menu", modifier = Modifier.padding(16.dp))
+                Divider()
+                NavigationDrawerItem(
+                    label = { Text("Strona główna") },
+                    selected = false,
+                    onClick = {
+                        // np. zmień ekran albo nawiguj
+                        scope.launch { drawerState.close() }
+                    }
+                )
+                NavigationDrawerItem(
+                    label = { Text("O aplikacji") },
+                    selected = false,
+                    onClick = {
+                        scope.launch {
+                            drawerState.close()
+                            navController.navigate("aboutApplication")
                         }
                     }
-                },
-                modifier = Modifier.height(90.dp)
-            )
+                )
+            }
         }
-    ) { paddingValues ->
-        LazyColumn( modifier = Modifier
-            .fillMaxHeight() // Wypełnia dostępne miejsce
-            .fillMaxWidth()
-            .padding(paddingValues)
-            .padding(start = 20.dp, end = 20.dp)
-            .clip(RoundedCornerShape(16.dp)),
-            verticalArrangement = Arrangement.spacedBy(5.dp)
-        ) {
-            val DrinksToShow = if(showAlcoholDrinks) AlcoholDrinksInfo else NoAlcoholDrinksInfo
-            items(DrinksToShow) { drink ->
-                Button(onClick = {onDrinksListClick(drink)},
-                    colors = ButtonDefaults.buttonColors(containerColor = LBlue),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp)
-                ){
-                    Column(horizontalAlignment = Alignment.CenterHorizontally){
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            modifier = Modifier
+                                .fillMaxHeight(),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.Bottom
+
                         ) {
-                            Text(text = drink.name, color = Color.Black, fontSize = 18.sp, modifier = Modifier.padding(0.dp))
-                            Image(
-                                painter = painterResource(id = drink.imageResId),
-                                contentDescription = "Drink Icon",
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .size(90.dp)
-                            )
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically){
-                            for(i in 1..5){
-                                Icon(
-                                    imageVector = if (i <= drink.rating) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                                    contentDescription = "Rating",
-                                    tint = Pink
+                            Button(
+                                onClick = { showAlcoholDrinks = true },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Transparent, // Brak tła
+                                    contentColor = MaterialTheme.colorScheme.onBackground // Domyślny kolor czcionki
                                 )
+                            ) {
+                                if (showAlcoholDrinks) {
+                                    textUnderline(
+                                        "Alkoholowe",
+                                        underlineColor = MaterialTheme.colorScheme.primary,
+                                        16.sp,
+                                        FontWeight.Medium
+                                    )
+                                } else {
+                                    Text(text = "Alkoholowe", fontSize = 16.sp)
+                                }
+                            }
+                            Button(
+                                onClick = { showAlcoholDrinks = false },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Transparent, // Brak tła
+                                    contentColor = MaterialTheme.colorScheme.onBackground // Domyślny kolor czcionki
+                                )
+                            ) {
+                                if (!showAlcoholDrinks) {
+                                    textUnderline(
+                                        "Bezalkoholowe",
+                                        underlineColor = LBlue,
+                                        16.sp,
+                                        FontWeight.Medium
+                                    )
+                                } else {
+                                    Text(text = "Bezalkoholowe", fontSize = 16.sp)
+                                }
+                            }
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = { scope.launch { drawerState.open() } }
+                        ) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                    },
+                    modifier = Modifier.height(100.dp)
+                )
+            }
+        ) { paddingValues ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxHeight() // Wypełnia dostępne miejsce
+                    .fillMaxWidth()
+                    .padding(paddingValues)
+                    .padding(start = 20.dp, end = 20.dp)
+                    .clip(RoundedCornerShape(16.dp)),
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                val DrinksToShow = if (showAlcoholDrinks) AlcoholDrinksInfo else NoAlcoholDrinksInfo
+                items(DrinksToShow) { drink ->
+                    Button(
+                        onClick = { onDrinksListClick(drink) },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = drink.name,
+                                    color = Color.Black,
+                                    fontSize = 16.sp,
+                                    modifier = Modifier.padding(0.dp)
+                                )
+                                Image(
+                                    painter = painterResource(id = drink.imageResId),
+                                    contentDescription = "Drink Icon",
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .size(90.dp)
+                                )
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                for (i in 1..5) {
+                                    Icon(
+                                        imageVector = if (i <= drink.rating) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                                        contentDescription = "Rating",
+                                        tint = MaterialTheme.colorScheme.secondary
+                                    )
+                                }
                             }
                         }
                     }
@@ -401,7 +465,7 @@ fun TimerUI(
                 ){
                     Button(onClick = onStart,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = LBlue
+                            containerColor = MaterialTheme.colorScheme.primary
                         )
                     ) {
                         Image(
@@ -596,12 +660,14 @@ fun showDrinkInfo(
         ) {
             Spacer(modifier = Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(modifier = Modifier
+                    .weight(0.6f),
+                    horizontalAlignment = Alignment.CenterHorizontally) {
                     Row {
                         Text(
                             drink.name,
-                            color = LBlue,
-                            fontSize = 24.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -610,14 +676,15 @@ fun showDrinkInfo(
                             Icon(
                                 imageVector = if (i <= drink.rating) Icons.Filled.Star else Icons.Outlined.StarBorder,
                                 contentDescription = "Rating",
-                                tint = Pink,
+                                tint = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.size(30.dp)
                             )
                         }
                     }
                 }
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth()
+                        .weight(0.4f),
                     horizontalAlignment = Alignment.End
                 ) {
                     Image(
@@ -634,15 +701,26 @@ fun showDrinkInfo(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                textUnderline("Składniki", LBlue, 22.sp, FontWeight.Bold)
-                Spacer(modifier = Modifier.width(screenWidth * 0.3f))
-                SMS_button(drink)
-                IconButton(onClick = { backButton() }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Powrót"
-                    )
+                Column(modifier = Modifier
+                ) {
+                    textUnderline("Składniki", MaterialTheme.colorScheme.primary, 22.sp, FontWeight.Bold)
                 }
+
+                Column(modifier = Modifier
+                    .fillMaxWidth(),
+                    horizontalAlignment = Alignment.End
+                ){
+                    Row(verticalAlignment = Alignment.CenterVertically){
+                        SMS_button(drink)
+                        IconButton(onClick = { backButton() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Powrót"
+                            )
+                        }
+                    }
+                }
+
             }
             Text(
                 text = drink.ingredient,
@@ -651,7 +729,7 @@ fun showDrinkInfo(
                     .clip(RoundedCornerShape(12.dp))
                     .padding(5.dp)
             )
-            textUnderline("Przygotowanie", LBlue, 22.sp, FontWeight.Bold)
+            textUnderline("Przygotowanie", MaterialTheme.colorScheme.primary, 22.sp, FontWeight.Bold)
             Text(
                 text = drink.description,
                 fontSize = 18.sp,
@@ -664,6 +742,87 @@ fun showDrinkInfo(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun aboutApplication(navController: NavController){
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Text("Menu", modifier = Modifier.padding(16.dp))
+                Divider()
+                NavigationDrawerItem(
+                    label = { Text("Strona główna") },
+                    selected = false,
+                    onClick = {
+                        // np. zmień ekran albo nawiguj
+                        scope.launch {
+                            drawerState.close()
+                            navController.navigate("DrinksList")
+                        }
+                    }
+                )
+                NavigationDrawerItem(
+                    label = { Text("O aplikacji") },
+                    selected = false,
+                    onClick = {
+                        scope.launch {
+                            drawerState.close()
+                        }
+                    }
+                )
+            }
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                         Text(text = "")
+                        },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = { scope.launch { drawerState.open() } }
+                        ) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                    }
+                )
+            }
+        ){ paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(paddingValues)
+                    .padding(start = 40.dp, end = 40.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.drink_logo3),
+                    contentDescription = "Logo aplikacji",
+                    modifier = Modifier
+                        .size(200.dp)
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = "O aplikacji",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 25.sp
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Aplikacja udostępnia liste drinków alkoholowych i bezalkoholowych. " +
+                        "Do każdego driknu można zobaczyć również podtrzebne składniki oraz sposób przygotowania.",
+                    textAlign = TextAlign.Center,
+                    color = Color.Gray
+                )
+            }
+        }
+    }
+}
 
 
 // podkreślanie tekstu
