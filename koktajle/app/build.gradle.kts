@@ -59,6 +59,6 @@ dependencies {
     val nav_version = "2.8.9"
     implementation("androidx.navigation:navigation-compose:$nav_version")
     implementation("androidx.compose.material:material-icons-extended:1.6.7")
-    implementation("androidx.compose.material3:material3:1.2.0")
+    implementation("androidx.compose.material3:material3:1.2.1")
 
 }

@@ -1,5 +1,6 @@
 package com.example.koktajle
 
+import android.R.id.input
 import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
@@ -70,21 +71,32 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+
 
 class Drink(val name: String, val rating: Int, val imageResId: Int,
             val ingredient: String,
@@ -444,10 +456,9 @@ fun DrinksList(onDrinksListClick: (Drink) -> Unit = {},
 @Composable
 fun TimerUI(
     time: Long,
-    onStart: () -> Unit,
+    onStart: (Long) -> Unit,
     onStop: () -> Unit,
     onReset: () -> Unit
-
 ) {
     val configuration = LocalConfiguration.current
 
@@ -456,27 +467,145 @@ fun TimerUI(
         modifier = Modifier.fillMaxWidth()
             .fillMaxHeight()
     ) {
+        var inputMinutes by remember { mutableStateOf("00") }
+        var inputSeconds by remember { mutableStateOf("00") }
+
+        val focusRequester = remember { FocusRequester() }
+        var hasMinutesBeenClicked by remember { mutableStateOf(false) }
+        var hasSecondsBeenClicked by remember { mutableStateOf(false) }
+
+
+        val context = LocalContext.current
+
+        var isRunning by remember {mutableStateOf(false)}
+        LaunchedEffect(isRunning, time) {
+            if (isRunning) {
+                inputMinutes = String.format("%02d", (time / 1000) / 60)
+                inputSeconds = String.format("%02d", (time / 1000) % 60)
+            }
+            if (!isRunning) {
+                inputMinutes = String.format("%02d", (time / 1000) / 60)
+                inputSeconds = String.format("%02d", (time / 1000) % 60)
+            }
+        }
+
+        var hasShownToast by remember {mutableStateOf(true)}
+        LaunchedEffect(time) {
+            if(time == 0L){
+                isRunning = false
+            }
+            if(time == 0L && !hasShownToast){
+                Toast.makeText(context, "Czas minął!", Toast.LENGTH_SHORT).show()
+                hasShownToast = true
+            }
+            if(time > 0L && hasShownToast){
+                hasShownToast = false
+            }
+        }
+
         when(configuration.orientation) {
             //Orientacja pionowa
             Configuration.ORIENTATION_PORTRAIT -> {
-                Text(text = String.format("%.2f", time / 1000.0), fontSize = 40.sp)
+                Row(modifier = Modifier
+                    .fillMaxWidth(0.4f),
+                    verticalAlignment = Alignment.CenterVertically){
+                    TextField(
+                        value = inputMinutes,
+                        onValueChange = { newValue ->
+                            if (newValue.length <= 2 && newValue.all { it.isDigit() }) {
+                                inputMinutes = newValue
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .focusRequester(focusRequester)
+                            .onFocusChanged { focusState ->
+                                if (focusState.isFocused && !hasMinutesBeenClicked) {
+                                    inputMinutes = ""
+                                    hasMinutesBeenClicked = true
+                                }
+                            },
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Number
+                        ),
+                        textStyle = TextStyle(
+                            fontSize = 25.sp,
+                            textAlign = TextAlign.End
+                        ),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            disabledContainerColor = Color.Transparent
+                        ),
+                        enabled = !isRunning
+                    )
+                    Text(text = ":",
+                        fontSize = 40.sp
+                    )
+                    TextField(
+                        value = inputSeconds,
+                        onValueChange = { newValue ->
+                            if (newValue.length <= 2 && newValue.all { it.isDigit() }) {
+                                inputSeconds = newValue
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .focusRequester(focusRequester)
+                            .onFocusChanged { focusState ->
+                                if (focusState.isFocused && !hasSecondsBeenClicked) {
+                                    inputSeconds = ""
+                                    hasSecondsBeenClicked = true
+                                }
+                            },
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Number
+                        ),
+                        textStyle = TextStyle(
+                            fontSize = 25.sp,
+                            textAlign = TextAlign.Start
+                        ),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            disabledContainerColor = Color.Transparent
+                        ),
+                        enabled = !isRunning
+                    )
+                }
                 Row(horizontalArrangement = Arrangement.SpaceEvenly,
                     modifier = Modifier.fillMaxWidth()
+                        .padding(top = 10.dp)
                 ){
-                    Button(onClick = onStart,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
+                    Button(onClick = {
+                        hasMinutesBeenClicked = false
+                        hasSecondsBeenClicked = false
+                        if(inputSeconds == "00" && inputMinutes == "00"){
+
+                        }
+                        else{
+                            isRunning = true
+                            val minutes = inputMinutes.toIntOrNull() ?: 0
+                            val seconds = inputSeconds.toIntOrNull() ?: 0
+                            val totalMillis = (minutes * 60 + seconds) * 1000L
+                            onStart(totalMillis)
+                        }
+
+                    }, colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )) {
                         Image(
                             painter = painterResource(R.drawable.play_icon2),
-                            contentDescription = "Drink Icon",
+                            contentDescription = "Start timer",
                             modifier = Modifier
                                 .clip(RoundedCornerShape(16.dp))
                                 .size(30.dp)
                         )
                     }
-                    Button(onClick = onStop,
+                    Button(onClick = {
+                        isRunning = false
+                        onStop()
+                    },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Pink
                         )
@@ -489,7 +618,10 @@ fun TimerUI(
                                 .size(30.dp)
                         )
                     }
-                    Button(onClick = onReset,
+                    Button(onClick = {
+                        isRunning = false
+                        onReset()
+                    },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Gray
                         )
@@ -507,23 +639,106 @@ fun TimerUI(
             //Orientacja pozioma
             Configuration.ORIENTATION_LANDSCAPE -> {
                 Row(horizontalArrangement = Arrangement.SpaceEvenly,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ){
-                    Text(text = String.format("%.2f", time / 1000.0), fontSize = 40.sp)
-                    Button(onClick = onStart,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = LBlue
+                    Row(modifier = Modifier
+                        .fillMaxWidth(0.20f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        TextField(
+                            value = inputMinutes,
+                            onValueChange = { newValue ->
+                                if (newValue.length <= 2 && newValue.all { it.isDigit() }) {
+                                    inputMinutes = newValue
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .focusRequester(focusRequester)
+                                .onFocusChanged { focusState ->
+                                    if (focusState.isFocused && !hasMinutesBeenClicked) {
+                                        inputMinutes = ""
+                                        hasMinutesBeenClicked = true
+                                    }
+                                },
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                keyboardType = KeyboardType.Number
+                            ),
+                            textStyle = TextStyle(
+                                fontSize = 25.sp,
+                                textAlign = TextAlign.End
+                            ),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent
+                            ),
+                            enabled = !isRunning
                         )
-                    ) {
+                        Text(text = ":",
+                            fontSize = 40.sp
+                        )
+                        TextField(
+                            value = inputSeconds,
+                            onValueChange = { newValue ->
+                                if (newValue.length <= 2 && newValue.all { it.isDigit() }) {
+                                    inputSeconds = newValue
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .focusRequester(focusRequester)
+                                .onFocusChanged { focusState ->
+                                    if (focusState.isFocused && !hasSecondsBeenClicked) {
+                                        inputSeconds = ""
+                                        hasSecondsBeenClicked = true
+                                    }
+                                },
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                keyboardType = KeyboardType.Number
+                            ),
+                            textStyle = TextStyle(
+                                fontSize = 25.sp,
+                                textAlign = TextAlign.Start
+                            ),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent
+                            ),
+                            enabled = !isRunning
+                        )
+                    }
+                    Button(onClick = {
+                        hasMinutesBeenClicked = false
+                        hasSecondsBeenClicked = false
+                        if(inputSeconds == "00" && inputMinutes == "00"){
+
+                        }
+                        else{
+                            isRunning = true
+                            val minutes = inputMinutes.toIntOrNull() ?: 0
+                            val seconds = inputSeconds.toIntOrNull() ?: 0
+                            val totalMillis = (minutes * 60 + seconds) * 1000L
+                            onStart(totalMillis)
+                        }
+
+                    }, colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )) {
                         Image(
                             painter = painterResource(R.drawable.play_icon2),
-                            contentDescription = "Drink Icon",
+                            contentDescription = "Start timer",
                             modifier = Modifier
                                 .clip(RoundedCornerShape(16.dp))
                                 .size(30.dp)
                         )
                     }
-                    Button(onClick = onStop,
+                    Button(onClick = {
+                        isRunning = false
+                        onStop()
+                    },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Pink
                         )
@@ -536,7 +751,10 @@ fun TimerUI(
                                 .size(30.dp)
                         )
                     }
-                    Button(onClick = onReset,
+                    Button(onClick = {
+                        isRunning = false
+                        onReset()
+                    },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Gray
                         )
@@ -560,66 +778,32 @@ class TimerViewModel : ViewModel() {
 
     private val _time = mutableStateOf(0L)
     val time: State<Long> = _time
+    private var initialTimeMillis: Long = 0L
 
-    private var startTime = 0L
     private var timerJob: Job? = null
 
-    fun startTimer() {
+    fun startTimer(startTimeMillis: Long) {
+        initialTimeMillis = startTimeMillis
         if (timerJob?.isActive == true) return
 
-        startTime = System.currentTimeMillis() - _time.value
+        _time.value = startTimeMillis
 
         timerJob = viewModelScope.launch {
-            while (true) {
-                _time.value = System.currentTimeMillis() - startTime
-                delay(10L)
+            while (_time.value > 0) {
+                delay(100L)
+                _time.value -= 100L
             }
         }
     }
 
     fun stopTimer() {
         timerJob?.cancel()
+
     }
 
     fun resetTimer() {
         timerJob?.cancel()
-        _time.value = 0L
-    }
-}
-
-@Composable
-fun SMS_button(drink: Drink){
-
-    val context = LocalContext.current
-    FloatingActionButton(
-        onClick = {
-            val smsText =
-                "Ingredients for ${drink.name} drink: ${drink.ingredient}"
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse("smsto:")
-                putExtra("sms_body", smsText)
-            }
-            try {
-                context.startActivity(intent)
-            } catch (e: Exception) {
-                Toast.makeText(
-                    context,
-                    "Nie udało się otworzyć wiadomości",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        },
-        containerColor = Color.Transparent, // kolor tła
-        elevation = FloatingActionButtonDefaults.elevation(0.dp),  // brak cienia
-        modifier = Modifier.width(70.dp).height(35.dp) // zmiana rozmiaru
-    ) {
-//            Image(painter = painterResource(id = R.drawable.send1),
-//                contentDescription = "send message"
-//            )
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.Message,
-            contentDescription = "Powrót"
-        )
+        _time.value = initialTimeMillis
     }
 }
 
@@ -632,18 +816,19 @@ fun showDrinkInfo(
     viewModel: TimerViewModel = viewModel()
 ) {
     val time by viewModel.time
+
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 
     Scaffold(
         bottomBar = {
             BottomAppBar(
-                modifier = Modifier.height(screenHeight * 0.17f),
+                modifier = Modifier.height(screenHeight * 0.21f),
                 containerColor = MaterialTheme.colorScheme.surface
             ) {
                 TimerUI(
                     time = time,
-                    onStart = { viewModel.startTimer() },
+                    onStart = { milis-> viewModel.startTimer(milis) },
                     onStop = { viewModel.stopTimer() },
                     onReset = { viewModel.resetTimer() }
                 )
@@ -662,15 +847,16 @@ fun showDrinkInfo(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier
                     .weight(0.6f),
-                    horizontalAlignment = Alignment.CenterHorizontally) {
-                    Row {
-                        Text(
-                            drink.name,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        drink.name,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.size(10.dp))
+                    Text(text = "Trudnosć przygotowania:", color = Gray, fontSize = 13.sp)
                     Row {
                         for (i in 1..5) {
                             Icon(
@@ -738,6 +924,43 @@ fun showDrinkInfo(
                     .padding(5.dp)
             )
         }
+    }
+}
+
+
+@Composable
+fun SMS_button(drink: Drink){
+
+    val context = LocalContext.current
+    FloatingActionButton(
+        onClick = {
+            val smsText =
+                "Ingredients for ${drink.name} drink: ${drink.ingredient}"
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse("smsto:")
+                putExtra("sms_body", smsText)
+            }
+            try {
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(
+                    context,
+                    "Nie udało się otworzyć wiadomości",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        },
+        containerColor = Color.Transparent, // kolor tła
+        elevation = FloatingActionButtonDefaults.elevation(0.dp),  // brak cienia
+        modifier = Modifier.width(70.dp).height(35.dp) // zmiana rozmiaru
+    ) {
+//            Image(painter = painterResource(id = R.drawable.send1),
+//                contentDescription = "send message"
+//            )
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.Message,
+            contentDescription = "Powrót"
+        )
     }
 }
 
